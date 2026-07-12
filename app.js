@@ -8,7 +8,7 @@
   const CHILD_LINE_WIDTH = 10;
   const ERASE_HIT_DISTANCE = 18;
 
-  const DEFAULT_BASE_WIDTH = 900;
+  const DEFAULT_BASE_WIDTH = 600;
   const DEFAULT_BASE_HEIGHT = 600;
   const MIN_CANVAS_SIZE = 200;
   const MAX_CANVAS_WIDTH = 1400;
@@ -68,7 +68,12 @@
   }
 
   function visibleCanvases() {
-    return state.mode === "parent" ? [state.base] : state.practiceCanvases;
+    return state.mode === "parent" ? [state.base] : [state.base, ...state.practiceCanvases];
+  }
+
+  function isEditable(canvasData) {
+    if (canvasData.id === "base") return state.mode === "parent";
+    return state.mode === "child";
   }
 
   // --- Canvas coordinate helpers ---
@@ -173,6 +178,10 @@
     if (!canvasData.ctx) return;
     const ctx = canvasData.ctx;
     const isBase = canvasData.id === "base";
+    // The base canvas is the bold, high-contrast reference while it's shown
+    // alongside practice sheets in child mode; practice sheets themselves
+    // use the soft gray/pastel guide so the child's own strokes stand out.
+    const useBoldStyle = isBase && state.mode === "child";
     ctx.clearRect(0, 0, canvasData.width, canvasData.height);
     drawGuideLines(ctx, canvasData.width, canvasData.height);
 
@@ -183,14 +192,14 @@
       if (stroke.owner === "parent") {
         parentIndex += 1;
         let color;
-        if (isBase) {
-          color = state.orderMode
-            ? BASE_ORDER_COLORS[(parentIndex - 1) % BASE_ORDER_COLORS.length]
-            : PARENT_DONE_COLOR;
-        } else {
+        if (useBoldStyle) {
           color = state.orderMode
             ? ORDER_LABEL_COLORS[(parentIndex - 1) % ORDER_LABEL_COLORS.length]
             : CHILD_TEMPLATE_COLOR;
+        } else {
+          color = state.orderMode
+            ? BASE_ORDER_COLORS[(parentIndex - 1) % BASE_ORDER_COLORS.length]
+            : PARENT_DONE_COLOR;
         }
         drawStrokePath(ctx, stroke.points, color, PARENT_LINE_WIDTH);
         if (state.orderMode) {
@@ -226,6 +235,7 @@
   }
 
   function onPointerDown(evt, canvasData) {
+    if (!isEditable(canvasData)) return;
     if (activePointerId !== null) return;
     activePointerId = evt.pointerId;
     canvasData.el.setPointerCapture(evt.pointerId);
@@ -309,19 +319,21 @@
   function buildCanvasList() {
     canvasListEl.innerHTML = "";
     const list = visibleCanvases();
+    let practiceIndex = 0;
 
-    list.forEach((canvasData, idx) => {
+    list.forEach((canvasData) => {
       const card = document.createElement("div");
       card.className = "canvas-card";
 
       const label = document.createElement("div");
       label.className = "canvas-label";
-      if (state.mode === "parent") {
+      if (canvasData.id === "base") {
         label.textContent = "📝 おてほん(ベース)";
       } else if (canvasData.isBlank) {
         label.textContent = "🎨 じゆうれんしゅう";
       } else {
-        label.textContent = `✍️ れんしゅう ${idx + 1}`;
+        practiceIndex += 1;
+        label.textContent = `✍️ れんしゅう ${practiceIndex}`;
       }
 
       const canvasEl = document.createElement("canvas");
@@ -356,6 +368,7 @@
     visibleCanvases().forEach((c) => {
       if (!c.card) return;
       c.card.classList.toggle("active", state.mode === "child" && c.id === state.activeCopyId);
+      c.card.classList.toggle("readonly", !isEditable(c));
     });
   }
 

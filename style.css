@@ -217,6 +217,12 @@ body {
   cursor: crosshair;
 }
 
+.canvas-card.readonly canvas {
+  cursor: not-allowed;
+  border-style: solid;
+  border-color: #e0e0e0;
+}
+
 .canvas-card.active canvas {
   border-color: #4dabf7;
   border-style: solid;
