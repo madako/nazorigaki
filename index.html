@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>なぞりがき</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header class="app-header">
+  <h1>✏️ なぞりがき</h1>
+  <div class="mode-switch" role="tablist">
+    <button id="mode-parent" class="mode-btn active" data-mode="parent" role="tab" aria-selected="true">👨‍👩‍👧 おやモード</button>
+    <button id="mode-child" class="mode-btn" data-mode="child" role="tab" aria-selected="false">🧒 こどもモード</button>
+  </div>
+</header>
+
+<main class="app-main">
+  <aside id="toolbar-parent" class="toolbar">
+    <div class="tool-group">
+      <button id="tool-parent-pen" class="tool-btn active" data-tool="pen">✏️ ペン</button>
+      <button id="tool-parent-eraser" class="tool-btn" data-tool="eraser">🧹 一本消し</button>
+    </div>
+    <div class="tool-group">
+      <label class="switch-label">
+        <input type="checkbox" id="order-mode-toggle" />
+        <span>🔢 書き順モード</span>
+      </label>
+    </div>
+    <div class="tool-group">
+      <button id="parent-clear-all" class="danger-btn">🗑️ すべて消す</button>
+    </div>
+  </aside>
+
+  <aside id="toolbar-child" class="toolbar hidden">
+    <div class="tool-group">
+      <button id="tool-child-pen" class="tool-btn active" data-tool="pen">✏️ ペン</button>
+      <button id="tool-child-eraser" class="tool-btn" data-tool="eraser">🧹 一本消し</button>
+    </div>
+    <div class="tool-group color-palette" id="child-color-palette">
+      <!-- color swatches injected by JS -->
+    </div>
+    <div class="tool-group">
+      <button id="child-clear-all" class="danger-btn">🗑️ すべて消す</button>
+    </div>
+  </aside>
+
+  <div class="canvas-wrap">
+    <canvas id="draw-canvas" width="900" height="600"></canvas>
+  </div>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
