@@ -11,8 +11,13 @@
   const ERASE_HIT_DISTANCE = 18;
 
   const ORDER_COLORS = [
-    "#e74c3c", "#e67e22", "#f1c40f", "#2ecc71", "#1abc9c",
-    "#3498db", "#9b59b6", "#e84393", "#8e44ad", "#16a085",
+    "#ffadad", "#ffd6a5", "#fdffb6", "#caffbf", "#9bf6ff",
+    "#a0c4ff", "#bdb2ff", "#ffc6ff", "#e3c9a8", "#b5ead7",
+  ];
+
+  const ORDER_LABEL_COLORS = [
+    "#e03131", "#e8590c", "#b8860b", "#2f9e44", "#0c8599",
+    "#1971c2", "#7048e8", "#d6336c", "#8b5e34", "#12b886",
   ];
 
   const CHILD_COLORS = [
@@ -129,7 +134,8 @@
           : PARENT_DONE_COLOR;
         drawStrokePath(stroke.points, color, PARENT_LINE_WIDTH);
         if (state.orderMode) {
-          parentLabels.push({ point: stroke.points[0], number: parentIndex, color });
+          const labelColor = ORDER_LABEL_COLORS[(parentIndex - 1) % ORDER_LABEL_COLORS.length];
+          parentLabels.push({ point: stroke.points[0], number: parentIndex, color: labelColor });
         }
       } else {
         drawStrokePath(stroke.points, stroke.color, CHILD_LINE_WIDTH);
@@ -228,6 +234,7 @@
 
   modeButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
+      const previousMode = state.mode;
       state.mode = btn.dataset.mode;
       modeButtons.forEach((b) => {
         b.classList.toggle("active", b === btn);
@@ -235,6 +242,11 @@
       });
       toolbarParent.classList.toggle("hidden", state.mode !== "parent");
       toolbarChild.classList.toggle("hidden", state.mode !== "child");
+
+      if (previousMode === "child" && state.mode === "parent") {
+        state.strokes = state.strokes.filter((s) => s.owner !== "child");
+        redraw();
+      }
     });
   });
 
@@ -253,7 +265,6 @@
   });
 
   document.getElementById("parent-clear-all").addEventListener("click", () => {
-    if (!confirm("おやが描いた線をすべて消しますか？")) return;
     state.strokes = state.strokes.filter((s) => s.owner !== "parent");
     redraw();
   });
@@ -268,7 +279,6 @@
   });
 
   document.getElementById("child-clear-all").addEventListener("click", () => {
-    if (!confirm("こどもが描いた線をすべて消しますか？")) return;
     state.strokes = state.strokes.filter((s) => s.owner !== "child");
     redraw();
   });
