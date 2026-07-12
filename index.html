@@ -34,9 +34,25 @@
       <button id="canvas-resize-apply" class="tool-btn">↔️ サイズ適用</button>
     </div>
     <div class="tool-group">
-      <span class="group-title">📋 コピー</span>
-      <label class="num-input-row">複製数<input type="number" id="copy-count-input" min="1" max="20" step="1" value="3"></label>
-      <button id="copy-canvas-btn" class="tool-btn">📋 コピーする</button>
+      <span class="group-title">✍️ 練習キャンバス(こどもモード)</span>
+      <label class="num-input-row">練習回数
+        <select id="practice-count-select">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3" selected>3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+        </select>
+      </label>
+      <label class="switch-label">
+        <input type="checkbox" id="blank-canvas-toggle" />
+        <span>📄 最後に無地の練習キャンバス表示</span>
+      </label>
     </div>
     <div class="tool-group">
       <button id="parent-clear-all" class="danger-btn">🗑️ すべて消す</button>
@@ -58,7 +74,6 @@
 
   <div class="canvas-wrap">
     <div id="canvas-list" class="canvas-list"></div>
-    <p id="no-copies-hint" class="hint hidden">まだれんしゅう用紙がありません。おやモードで文字を描いてから「コピーする」を押してください。</p>
   </div>
 </main>
 

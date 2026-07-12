@@ -3,6 +3,7 @@
 
   const PARENT_LIVE_COLOR = "#111111";
   const PARENT_DONE_COLOR = "#9e9e9e";
+  const CHILD_TEMPLATE_COLOR = "#000000";
   const PARENT_LINE_WIDTH = 16;
   const CHILD_LINE_WIDTH = 10;
   const ERASE_HIT_DISTANCE = 18;
@@ -13,15 +14,19 @@
   const MAX_CANVAS_WIDTH = 1400;
   const MAX_CANVAS_HEIGHT = 1000;
 
-  const DEFAULT_COPY_COUNT = 3;
-  const MIN_COPY_COUNT = 1;
-  const MAX_COPY_COUNT = 20;
+  const DEFAULT_PRACTICE_COUNT = 3;
+  const MIN_PRACTICE_COUNT = 1;
+  const MAX_PRACTICE_COUNT = 10;
 
-  const ORDER_COLORS = [
+  // Pastel palette used only for the base canvas's stroke-order rendering.
+  const BASE_ORDER_COLORS = [
     "#ffadad", "#ffd6a5", "#fdffb6", "#caffbf", "#9bf6ff",
     "#a0c4ff", "#bdb2ff", "#ffc6ff", "#e3c9a8", "#b5ead7",
   ];
 
+  // Darker palette used for order-number labels, and for the practice
+  // canvases' template strokes in stroke-order mode (needs to stay bold
+  // since it doubles as the child's tracing guide).
   const ORDER_LABEL_COLORS = [
     "#e03131", "#e8590c", "#b8860b", "#2f9e44", "#0c8599",
     "#1971c2", "#7048e8", "#d6336c", "#8b5e34", "#12b886",
@@ -32,13 +37,14 @@
     "#3498db", "#9b59b6", "#e84393", "#795548", "#111111",
   ];
 
+  const GUIDE_COLOR = "#a5d8ff";
+
   const canvasListEl = document.getElementById("canvas-list");
-  const noCopiesHint = document.getElementById("no-copies-hint");
 
   let copyCounter = 0;
 
   function makeCanvasData(id, width, height, strokes) {
-    return { id, width, height, strokes: strokes || [], el: null, ctx: null, card: null };
+    return { id, width, height, strokes: strokes || [], el: null, ctx: null, card: null, isBlank: false };
   }
 
   // Application state
@@ -48,7 +54,10 @@
     childTool: "pen",
     orderMode: false,
     childColor: CHILD_COLORS[0],
-    canvases: [makeCanvasData("base", DEFAULT_BASE_WIDTH, DEFAULT_BASE_HEIGHT)],
+    practiceCount: DEFAULT_PRACTICE_COUNT,
+    showBlankCanvas: false,
+    base: makeCanvasData("base", DEFAULT_BASE_WIDTH, DEFAULT_BASE_HEIGHT),
+    practiceCanvases: [],
     activeCopyId: null,
     liveStroke: null, // { canvasId, owner, color, points }
     isErasing: false,
@@ -58,9 +67,8 @@
     return Math.max(min, Math.min(max, value));
   }
 
-  function isEditable(canvasData) {
-    if (canvasData.id === "base") return state.mode === "parent";
-    return state.mode === "child";
+  function visibleCanvases() {
+    return state.mode === "parent" ? [state.base] : state.practiceCanvases;
   }
 
   // --- Canvas coordinate helpers ---
@@ -110,6 +118,20 @@
   }
 
   // --- Rendering ---
+  function drawGuideLines(ctx, width, height) {
+    ctx.save();
+    ctx.strokeStyle = GUIDE_COLOR;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([10, 8]);
+    ctx.beginPath();
+    ctx.moveTo(width / 2, 0);
+    ctx.lineTo(width / 2, height);
+    ctx.moveTo(0, height / 2);
+    ctx.lineTo(width, height / 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   function drawStrokePath(ctx, points, color, width) {
     if (points.length === 0) return;
     ctx.strokeStyle = color;
@@ -150,7 +172,9 @@
   function redrawCanvas(canvasData) {
     if (!canvasData.ctx) return;
     const ctx = canvasData.ctx;
+    const isBase = canvasData.id === "base";
     ctx.clearRect(0, 0, canvasData.width, canvasData.height);
+    drawGuideLines(ctx, canvasData.width, canvasData.height);
 
     let parentIndex = 0;
     const parentLabels = [];
@@ -158,9 +182,16 @@
     for (const stroke of canvasData.strokes) {
       if (stroke.owner === "parent") {
         parentIndex += 1;
-        const color = state.orderMode
-          ? ORDER_COLORS[(parentIndex - 1) % ORDER_COLORS.length]
-          : PARENT_DONE_COLOR;
+        let color;
+        if (isBase) {
+          color = state.orderMode
+            ? BASE_ORDER_COLORS[(parentIndex - 1) % BASE_ORDER_COLORS.length]
+            : PARENT_DONE_COLOR;
+        } else {
+          color = state.orderMode
+            ? ORDER_LABEL_COLORS[(parentIndex - 1) % ORDER_LABEL_COLORS.length]
+            : CHILD_TEMPLATE_COLOR;
+        }
         drawStrokePath(ctx, stroke.points, color, PARENT_LINE_WIDTH);
         if (state.orderMode) {
           const labelColor = ORDER_LABEL_COLORS[(parentIndex - 1) % ORDER_LABEL_COLORS.length];
@@ -184,7 +215,7 @@
   }
 
   function redrawAll() {
-    state.canvases.forEach(redrawCanvas);
+    visibleCanvases().forEach(redrawCanvas);
   }
 
   // --- Pointer interaction ---
@@ -195,14 +226,13 @@
   }
 
   function onPointerDown(evt, canvasData) {
-    if (!isEditable(canvasData)) return;
     if (activePointerId !== null) return;
     activePointerId = evt.pointerId;
     canvasData.el.setPointerCapture(evt.pointerId);
 
-    if (canvasData.id !== "base") {
+    if (state.mode === "child") {
       state.activeCopyId = canvasData.id;
-      updateEditableStates();
+      updateActiveHighlight();
     }
 
     const point = getCanvasPoint(evt, canvasData);
@@ -278,13 +308,21 @@
   // --- Canvas list building ---
   function buildCanvasList() {
     canvasListEl.innerHTML = "";
-    state.canvases.forEach((canvasData, idx) => {
+    const list = visibleCanvases();
+
+    list.forEach((canvasData, idx) => {
       const card = document.createElement("div");
       card.className = "canvas-card";
 
       const label = document.createElement("div");
       label.className = "canvas-label";
-      label.textContent = idx === 0 ? "📝 おてほん(ベース)" : `✍️ れんしゅう ${idx}`;
+      if (state.mode === "parent") {
+        label.textContent = "📝 おてほん(ベース)";
+      } else if (canvasData.isBlank) {
+        label.textContent = "🎨 じゆうれんしゅう";
+      } else {
+        label.textContent = `✍️ れんしゅう ${idx + 1}`;
+      }
 
       const canvasEl = document.createElement("canvas");
       canvasEl.width = canvasData.width;
@@ -303,7 +341,7 @@
       attachPointerHandlers(canvasData);
     });
 
-    updateEditableStates();
+    updateActiveHighlight();
     redrawAll();
   }
 
@@ -314,19 +352,36 @@
     canvasData.el.style.maxWidth = `${canvasData.width}px`;
   }
 
-  function updateEditableStates() {
-    state.canvases.forEach((c) => {
+  function updateActiveHighlight() {
+    visibleCanvases().forEach((c) => {
       if (!c.card) return;
-      const editable = isEditable(c);
-      c.card.classList.toggle("readonly", !editable);
-      const isActive =
-        (c.id === "base" && state.mode === "parent") ||
-        (c.id === state.activeCopyId && state.mode === "child");
-      c.card.classList.toggle("active", isActive);
+      c.card.classList.toggle("active", state.mode === "child" && c.id === state.activeCopyId);
     });
+  }
 
-    const hasCopies = state.canvases.length > 1;
-    noCopiesHint.classList.toggle("hidden", !(state.mode === "child" && !hasCopies));
+  // --- Practice canvas generation ---
+  function regeneratePracticeCanvases() {
+    const templateStrokes = state.base.strokes.filter((s) => s.owner === "parent");
+
+    const list = [];
+    for (let i = 0; i < state.practiceCount; i++) {
+      copyCounter += 1;
+      const clonedStrokes = templateStrokes.map((s) => ({
+        owner: "parent",
+        points: s.points.map((p) => ({ x: p.x, y: p.y })),
+      }));
+      list.push(makeCanvasData(`practice-${copyCounter}`, state.base.width, state.base.height, clonedStrokes));
+    }
+
+    if (state.showBlankCanvas) {
+      copyCounter += 1;
+      const blank = makeCanvasData(`practice-${copyCounter}`, state.base.width, state.base.height, []);
+      blank.isBlank = true;
+      list.push(blank);
+    }
+
+    state.practiceCanvases = list;
+    state.activeCopyId = list.length > 0 ? list[0].id : null;
   }
 
   // --- Mode switching ---
@@ -345,20 +400,11 @@
       toolbarParent.classList.toggle("hidden", state.mode !== "parent");
       toolbarChild.classList.toggle("hidden", state.mode !== "child");
 
-      if (previousMode === "child" && state.mode === "parent") {
-        state.canvases.forEach((c) => {
-          if (c.id !== "base") {
-            c.strokes = c.strokes.filter((s) => s.owner !== "child");
-          }
-        });
+      if (previousMode !== state.mode && state.mode === "child") {
+        regeneratePracticeCanvases();
       }
 
-      if (state.mode === "child" && !state.activeCopyId && state.canvases.length > 1) {
-        state.activeCopyId = state.canvases[1].id;
-      }
-
-      updateEditableStates();
-      redrawAll();
+      buildCanvasList();
     });
   });
 
@@ -377,9 +423,8 @@
   });
 
   document.getElementById("parent-clear-all").addEventListener("click", () => {
-    const base = state.canvases[0];
-    base.strokes = base.strokes.filter((s) => s.owner !== "parent");
-    redrawCanvas(base);
+    state.base.strokes = state.base.strokes.filter((s) => s.owner !== "parent");
+    redrawCanvas(state.base);
   });
 
   // --- Resize (base canvas only) ---
@@ -387,7 +432,7 @@
   const heightInput = document.getElementById("canvas-height-input");
 
   document.getElementById("canvas-resize-apply").addEventListener("click", () => {
-    const base = state.canvases[0];
+    const base = state.base;
     const newWidth = clamp(parseInt(widthInput.value, 10) || base.width, MIN_CANVAS_SIZE, MAX_CANVAS_WIDTH);
     const newHeight = clamp(parseInt(heightInput.value, 10) || base.height, MIN_CANVAS_SIZE, MAX_CANVAS_HEIGHT);
 
@@ -406,29 +451,13 @@
     redrawCanvas(base);
   });
 
-  // --- Copy (duplicate base template into practice canvases) ---
-  const copyCountInput = document.getElementById("copy-count-input");
+  // --- Practice canvas settings ---
+  document.getElementById("practice-count-select").addEventListener("change", (evt) => {
+    state.practiceCount = clamp(parseInt(evt.target.value, 10) || DEFAULT_PRACTICE_COUNT, MIN_PRACTICE_COUNT, MAX_PRACTICE_COUNT);
+  });
 
-  document.getElementById("copy-canvas-btn").addEventListener("click", () => {
-    const count = clamp(parseInt(copyCountInput.value, 10) || DEFAULT_COPY_COUNT, MIN_COPY_COUNT, MAX_COPY_COUNT);
-    copyCountInput.value = count;
-
-    const base = state.canvases[0];
-    const templateStrokes = base.strokes.filter((s) => s.owner === "parent");
-
-    const newCopies = [];
-    for (let i = 0; i < count; i++) {
-      copyCounter += 1;
-      const clonedStrokes = templateStrokes.map((s) => ({
-        owner: "parent",
-        points: s.points.map((p) => ({ x: p.x, y: p.y })),
-      }));
-      newCopies.push(makeCanvasData(`copy-${copyCounter}`, base.width, base.height, clonedStrokes));
-    }
-
-    state.canvases = [base, ...newCopies];
-    state.activeCopyId = newCopies.length > 0 ? newCopies[0].id : null;
-    buildCanvasList();
+  document.getElementById("blank-canvas-toggle").addEventListener("change", (evt) => {
+    state.showBlankCanvas = evt.target.checked;
   });
 
   // --- Child toolbar ---
@@ -441,7 +470,7 @@
   });
 
   document.getElementById("child-clear-all").addEventListener("click", () => {
-    const canvasData = state.canvases.find((c) => c.id === state.activeCopyId);
+    const canvasData = state.practiceCanvases.find((c) => c.id === state.activeCopyId);
     if (!canvasData) return;
     canvasData.strokes = canvasData.strokes.filter((s) => s.owner !== "child");
     redrawCanvas(canvasData);
