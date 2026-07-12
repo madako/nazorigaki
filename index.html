@@ -28,6 +28,17 @@
       </label>
     </div>
     <div class="tool-group">
+      <span class="group-title">📐 サイズ変更(ベース)</span>
+      <label class="num-input-row">幅<input type="number" id="canvas-width-input" min="300" max="1400" step="10" value="900"></label>
+      <label class="num-input-row">高さ<input type="number" id="canvas-height-input" min="200" max="1000" step="10" value="600"></label>
+      <button id="canvas-resize-apply" class="tool-btn">↔️ サイズ適用</button>
+    </div>
+    <div class="tool-group">
+      <span class="group-title">📋 コピー</span>
+      <label class="num-input-row">複製数<input type="number" id="copy-count-input" min="1" max="20" step="1" value="3"></label>
+      <button id="copy-canvas-btn" class="tool-btn">📋 コピーする</button>
+    </div>
+    <div class="tool-group">
       <button id="parent-clear-all" class="danger-btn">🗑️ すべて消す</button>
     </div>
   </aside>
@@ -46,7 +57,8 @@
   </aside>
 
   <div class="canvas-wrap">
-    <canvas id="draw-canvas" width="900" height="600"></canvas>
+    <div id="canvas-list" class="canvas-list"></div>
+    <p id="no-copies-hint" class="hint hidden">まだれんしゅう用紙がありません。おやモードで文字を描いてから「コピーする」を押してください。</p>
   </div>
 </main>
 
