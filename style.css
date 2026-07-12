@@ -148,7 +148,8 @@ body {
   color: #555;
 }
 
-.num-input-row input[type="number"] {
+.num-input-row input[type="number"],
+.num-input-row select {
   width: 70px;
   padding: 6px 8px;
   border-radius: 8px;
@@ -216,33 +217,10 @@ body {
   cursor: crosshair;
 }
 
-.canvas-card.readonly canvas {
-  opacity: 0.5;
-  cursor: not-allowed;
-  border-style: solid;
-  border-color: #e0e0e0;
-}
-
 .canvas-card.active canvas {
   border-color: #4dabf7;
   border-style: solid;
   box-shadow: 0 0 0 4px rgba(77, 171, 247, 0.25);
-}
-
-.hint {
-  text-align: center;
-  color: #888;
-  font-size: 1rem;
-  padding: 30px;
-  border: 2px dashed #ffd166;
-  border-radius: 16px;
-  background: #ffffff;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-.hint.hidden {
-  display: none;
 }
 
 @media (max-width: 720px) {
