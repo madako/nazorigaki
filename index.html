@@ -15,6 +15,11 @@
   </div>
 </header>
 
+<div id="shared-banner" class="shared-banner hidden">
+  <span id="shared-banner-text">🔗 共有されたなぞりがきです。こどもモードでなぞって練習しましょう。</span>
+  <a id="shared-new-link" href="./">✏️ 自分でつくる</a>
+</div>
+
 <main class="app-main">
   <aside id="toolbar-parent" class="toolbar">
     <div class="tool-group">
@@ -55,6 +60,10 @@
       </label>
     </div>
     <div class="tool-group">
+      <span class="group-title">🔗 こうかい</span>
+      <button id="publish-btn" class="tool-btn">🔗 公開する</button>
+    </div>
+    <div class="tool-group">
       <button id="parent-clear-all" class="danger-btn">🗑️ すべて消す</button>
     </div>
   </aside>
@@ -76,6 +85,20 @@
     <div id="canvas-list" class="canvas-list"></div>
   </div>
 </main>
+
+<div id="publish-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h2>🔗 なぞりがきを公開しました</h2>
+    <p>このリンクを共有すると、見た人はこどもモードでなぞりがきができます。</p>
+    <div class="publish-link-row">
+      <input type="text" id="publish-link-input" readonly />
+      <button id="publish-copy-btn" class="tool-btn">📋 コピー</button>
+    </div>
+    <div class="modal-actions">
+      <button id="publish-close-btn" class="tool-btn">閉じる</button>
+    </div>
+  </div>
+</div>
 
 <script src="app.js"></script>
 </body>
