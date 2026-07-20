@@ -38,6 +38,7 @@
   ];
 
   const GUIDE_COLOR = "#a5d8ff";
+  const SHARE_FORMAT_VERSION = 1;
 
   const canvasListEl = document.getElementById("canvas-list");
 
@@ -61,6 +62,7 @@
     activeCopyId: null,
     liveStroke: null, // { canvasId, owner, color, points }
     isErasing: false,
+    sharedView: false,
   };
 
   function clamp(value, min, max) {
@@ -503,5 +505,151 @@
     palette.appendChild(swatch);
   });
 
-  buildCanvasList();
+  // --- Share encoding (URL-embedded, no server) ---
+  function bufferToBase64Url(buffer) {
+    let binary = "";
+    const bytes = new Uint8Array(buffer);
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
+  function base64UrlToBuffer(str) {
+    let base64 = str.replace(/-/g, "+").replace(/_/g, "/");
+    while (base64.length % 4) base64 += "=";
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes.buffer;
+  }
+
+  async function encodeShareData(payload) {
+    const bytes = new TextEncoder().encode(JSON.stringify(payload));
+    if (typeof CompressionStream === "function") {
+      try {
+        const cs = new CompressionStream("gzip");
+        const writer = cs.writable.getWriter();
+        writer.write(bytes);
+        writer.close();
+        const compressed = await new Response(cs.readable).arrayBuffer();
+        return "g" + bufferToBase64Url(compressed);
+      } catch (e) {
+        // fall through to uncompressed encoding below
+      }
+    }
+    return "r" + bufferToBase64Url(bytes.buffer);
+  }
+
+  async function decodeShareData(str) {
+    const tag = str.charAt(0);
+    const buffer = base64UrlToBuffer(str.slice(1));
+    if (tag === "g") {
+      const ds = new DecompressionStream("gzip");
+      const writer = ds.writable.getWriter();
+      writer.write(new Uint8Array(buffer));
+      writer.close();
+      const decompressed = await new Response(ds.readable).arrayBuffer();
+      return JSON.parse(new TextDecoder().decode(decompressed));
+    }
+    return JSON.parse(new TextDecoder().decode(buffer));
+  }
+
+  function buildSharePayload() {
+    const strokes = state.base.strokes
+      .filter((s) => s.owner === "parent")
+      .map((s) => s.points.map((p) => [Math.round(p.x), Math.round(p.y)]));
+    return {
+      v: SHARE_FORMAT_VERSION,
+      w: state.base.width,
+      h: state.base.height,
+      s: strokes,
+      pc: state.practiceCount,
+      bl: state.showBlankCanvas ? 1 : 0,
+      om: state.orderMode ? 1 : 0,
+    };
+  }
+
+  // --- Publish modal ---
+  const publishModal = document.getElementById("publish-modal");
+  const publishLinkInput = document.getElementById("publish-link-input");
+  const publishCopyBtn = document.getElementById("publish-copy-btn");
+
+  document.getElementById("publish-btn").addEventListener("click", async () => {
+    const payload = buildSharePayload();
+    const encoded = await encodeShareData(payload);
+    const url = `${location.origin}${location.pathname}#share=${encoded}`;
+    publishLinkInput.value = url;
+    publishModal.classList.remove("hidden");
+    publishLinkInput.focus();
+    publishLinkInput.select();
+  });
+
+  document.getElementById("publish-close-btn").addEventListener("click", () => {
+    publishModal.classList.add("hidden");
+  });
+
+  publishCopyBtn.addEventListener("click", async () => {
+    const url = publishLinkInput.value;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch (e) {
+      publishLinkInput.select();
+      document.execCommand("copy");
+    }
+    const originalLabel = publishCopyBtn.textContent;
+    publishCopyBtn.textContent = "✅ コピーしました";
+    setTimeout(() => {
+      publishCopyBtn.textContent = originalLabel;
+    }, 1500);
+  });
+
+  // --- Loading a shared link ---
+  function applySharedPayload(payload) {
+    state.sharedView = true;
+    state.base.width = clamp(parseInt(payload.w, 10) || DEFAULT_BASE_WIDTH, MIN_CANVAS_SIZE, MAX_CANVAS_WIDTH);
+    state.base.height = clamp(parseInt(payload.h, 10) || DEFAULT_BASE_HEIGHT, MIN_CANVAS_SIZE, MAX_CANVAS_HEIGHT);
+    state.base.strokes = (payload.s || []).map((points) => ({
+      owner: "parent",
+      points: points.map(([x, y]) => ({ x, y })),
+    }));
+    state.practiceCount = clamp(parseInt(payload.pc, 10) || DEFAULT_PRACTICE_COUNT, MIN_PRACTICE_COUNT, MAX_PRACTICE_COUNT);
+    state.showBlankCanvas = !!payload.bl;
+    state.orderMode = !!payload.om;
+    state.mode = "child";
+
+    document.querySelector(".mode-switch").classList.add("hidden");
+    document.getElementById("shared-banner").classList.remove("hidden");
+    document.getElementById("toolbar-parent").classList.add("hidden");
+    document.getElementById("toolbar-child").classList.remove("hidden");
+    document.getElementById("mode-parent").classList.remove("active");
+    document.getElementById("mode-parent").setAttribute("aria-selected", "false");
+    document.getElementById("mode-child").classList.add("active");
+    document.getElementById("mode-child").setAttribute("aria-selected", "true");
+
+    regeneratePracticeCanvases();
+  }
+
+  function showShareError() {
+    const banner = document.getElementById("shared-banner");
+    document.getElementById("shared-banner-text").textContent =
+      "⚠️ 共有リンクの読み込みに失敗しました。リンクが正しいかご確認ください。";
+    banner.classList.add("error");
+    banner.classList.remove("hidden");
+  }
+
+  async function tryLoadSharedView() {
+    const match = location.hash.match(/^#share=(.+)$/);
+    if (!match) return false;
+    try {
+      const payload = await decodeShareData(decodeURIComponent(match[1]));
+      applySharedPayload(payload);
+      return true;
+    } catch (e) {
+      showShareError();
+      return false;
+    }
+  }
+
+  document.getElementById("shared-new-link").href = location.pathname;
+
+  tryLoadSharedView().finally(buildCanvasList);
 })();
