@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>なぞりがき</title>
-<link rel="stylesheet" href="style.css?v=20260720" />
+<link rel="stylesheet" href="style.css?v=20260720b" />
 </head>
 <body>
 <header class="app-header">
@@ -26,46 +26,46 @@
       <button id="tool-parent-pen" class="tool-btn active" data-tool="pen">✏️ ペン</button>
       <button id="tool-parent-eraser" class="tool-btn" data-tool="eraser">🧹 一本消し</button>
     </div>
-    <div class="tool-group">
-      <label class="switch-label">
-        <input type="checkbox" id="order-mode-toggle" />
-        <span>🔢 書き順モード</span>
-      </label>
-    </div>
-    <div class="tool-group">
-      <span class="group-title">📐 サイズ変更(ベース)</span>
-      <label class="num-input-row">幅<input type="number" id="canvas-width-input" min="300" max="1400" step="10" value="600"></label>
-      <label class="num-input-row">高さ<input type="number" id="canvas-height-input" min="200" max="1000" step="10" value="600"></label>
-      <button id="canvas-resize-apply" class="tool-btn">↔️ サイズ適用</button>
-    </div>
-    <div class="tool-group">
-      <span class="group-title">✍️ 練習キャンバス(こどもモード)</span>
-      <label class="num-input-row">練習回数
-        <select id="practice-count-select">
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="3" selected>3</option>
-          <option value="4">4</option>
-          <option value="5">5</option>
-          <option value="6">6</option>
-          <option value="7">7</option>
-          <option value="8">8</option>
-          <option value="9">9</option>
-          <option value="10">10</option>
-        </select>
-      </label>
-      <label class="switch-label">
-        <input type="checkbox" id="blank-canvas-toggle" />
-        <span>📄 最後に無地の練習キャンバス表示</span>
-      </label>
-    </div>
-    <div class="tool-group">
-      <span class="group-title">🔗 こうかい</span>
-      <button id="publish-btn" class="tool-btn">🔗 公開する</button>
-    </div>
-    <div class="tool-group">
-      <button id="parent-clear-all" class="danger-btn">🗑️ すべて消す</button>
-    </div>
+    <label class="switch-label">
+      <input type="checkbox" id="order-mode-toggle" />
+      <span>🔢 書き順モード</span>
+    </label>
+    <button id="publish-btn" class="tool-btn publish-btn">🔗 公開する</button>
+
+    <details class="settings-accordion">
+      <summary>⚙️ サイズ・練習の詳細設定</summary>
+      <div class="accordion-body">
+        <div class="tool-group">
+          <span class="group-title">📐 サイズ変更(ベース)</span>
+          <label class="num-input-row">幅<input type="number" id="canvas-width-input" min="300" max="1400" step="10" value="600"></label>
+          <label class="num-input-row">高さ<input type="number" id="canvas-height-input" min="200" max="1000" step="10" value="600"></label>
+          <button id="canvas-resize-apply" class="tool-btn">↔️ サイズ適用</button>
+        </div>
+        <div class="tool-group">
+          <span class="group-title">✍️ 練習キャンバス(こどもモード)</span>
+          <label class="num-input-row">練習回数
+            <select id="practice-count-select">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3" selected>3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+              <option value="10">10</option>
+            </select>
+          </label>
+          <label class="switch-label">
+            <input type="checkbox" id="blank-canvas-toggle" />
+            <span>📄 最後に無地の練習キャンバス表示</span>
+          </label>
+        </div>
+      </div>
+    </details>
+
+    <button id="parent-clear-all" class="clear-link-btn">🗑️ すべて消す</button>
   </aside>
 
   <aside id="toolbar-child" class="toolbar hidden">
@@ -100,6 +100,6 @@
   </div>
 </div>
 
-<script src="app.js?v=20260720"></script>
+<script src="app.js?v=20260720b"></script>
 </body>
 </html>
