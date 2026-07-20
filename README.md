@@ -19,3 +19,18 @@ python3 -m http.server 8000
 - **消しゴム（一本消し）**: なぞった線をタップ/クリックすると一本だけ消せます。おやモードでは親の線のみ、こどもモードでは子の線のみ消せます（子は親の線を消せません）。
 - **すべて消す**: 各モードで自分が描いた線をすべて消去できます。
 - **書き順モード**（おやモードのみ）: 親の線を灰色ではなく描いた順に色分けし、線の始点に書き順の番号を表示します。
+
+## レンタルサーバーへの自動デプロイ
+
+`main` ブランチに push(PRのマージを含む)されると、`.github/workflows/deploy-ftp.yml` が自動的に FTP/FTPS/SFTP でレンタルサーバーへアップロードします。使うには、リポジトリの **Settings > Secrets and variables > Actions** で以下を設定してください。
+
+### Secrets(必須、値は非公開)
+- `FTP_SERVER`: レンタルサーバーのホスト名(例: `ftp.example.com`)
+- `FTP_USERNAME`: FTP/SFTPのユーザー名
+- `FTP_PASSWORD`: FTP/SFTPのパスワード
+
+### Variables(任意、初期値あり)
+- `FTP_PROTOCOL`: `ftp` / `ftps`(既定値) / `sftp` から選択
+- `FTP_SERVER_DIR`: アップロード先ディレクトリ(既定値は `/`。例: `/public_html/nazorigaki/`)
+
+設定後は Actions タブから手動実行(workflow_dispatch)もできます。
