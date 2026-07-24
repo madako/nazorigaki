@@ -22,15 +22,15 @@ python3 -m http.server 8000
 
 ## レンタルサーバーへの自動デプロイ
 
-`main` ブランチに push(PRのマージを含む)されると、`.github/workflows/deploy-ftp.yml` が自動的に FTP/FTPS/SFTP でレンタルサーバーへアップロードします。使うには、リポジトリの **Settings > Secrets and variables > Actions** で以下を設定してください。
+`main` ブランチに push(PRのマージを含む)されると、`.github/workflows/deploy-ftp.yml` が自動的に SFTP でレンタルサーバーへアップロードします(`index.html` / `style.css` / `app.js` のみ)。使うには、リポジトリの **Settings > Secrets and variables > Actions** で以下を設定してください。
 
 ### Secrets(必須、値は非公開)
-- `FTP_SERVER`: レンタルサーバーのホスト名(例: `ftp.example.com`)
-- `FTP_USERNAME`: FTP/SFTPのユーザー名
-- `FTP_PASSWORD`: FTP/SFTPのパスワード
+- `FTP_SERVER`: レンタルサーバーのホスト名(例: `sftp.example.com`)
+- `FTP_USERNAME`: SFTPのユーザー名
+- `FTP_PASSWORD`: SFTPのパスワード
 
 ### Variables(任意、初期値あり)
-- `FTP_PROTOCOL`: `ftp` / `ftps`(既定値) / `sftp` から選択
+- `FTP_PORT`: SFTPのポート番号(既定値は `22`)
 - `FTP_SERVER_DIR`: アップロード先ディレクトリ(既定値は `/`。例: `/public_html/nazorigaki/`)
 
 設定後は Actions タブから手動実行(workflow_dispatch)もできます。
