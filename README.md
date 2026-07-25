@@ -25,7 +25,7 @@ python3 -m http.server 8000
 `main` ブランチに push(PRのマージを含む)されると、`.github/workflows/deploy.yml` が以下の順で自動的にレンタルサーバー(XREA)へアップロードします。
 
 1. XREAのAPI(`https://api.xrea.com/v1/tool/ssh_ip_allow`)へ、実行中のGitHub ActionsランナーのIPアドレスを送信し、SSH接続許可リストへ自動登録
-2. 反映を待つため5分間待機(XREAの管理画面の表示に合わせています)
+2. 反映を待つため3分間待機
 3. SFTPで `index.html` / `style.css` / `app.js` をアップロード
 
 使うには、リポジトリの **Settings > Secrets and variables > Actions** で以下を設定してください。
