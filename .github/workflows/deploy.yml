@@ -1,4 +1,4 @@
-name: Deploy to XREA via FTPS
+name: Deploy to XREA via SFTP
 
 on:
   push:
@@ -13,18 +13,32 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Register runner IP with XREA SSH allow list
+        run: |
+          RUNNER_IP=$(curl -s https://api.ipify.org)
+          echo "Runner IP: $RUNNER_IP"
+          RESPONSE=$(curl -sS -X POST https://api.xrea.com/v1/tool/ssh_ip_allow \
+            -d "api_secret_key=${{ secrets.XREA_API_SECRET_KEY }}" \
+            -d "account=${{ secrets.XREA_ACCOUNT }}" \
+            -d "server_name=${{ secrets.XREA_SERVER_NAME }}" \
+            -d "param[addr]=$RUNNER_IP")
+          echo "XREA API response: $RESPONSE"
+
+      - name: Wait for XREA to apply the IP allow list
+        run: sleep 300  # XREAの管理画面に「反映まで5分程度」と表示されるため
+
       - name: Prepare deploy folder
         run: |
           mkdir -p dist
           cp index.html style.css app.js dist/
 
-      - name: FTPS Deploy
-        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+      - name: SFTP Deploy
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
           server: ${{ secrets.XREA_HOST }}
           port: ${{ secrets.XREA_PORT }}
           username: ${{ secrets.XREA_USER }}
           password: ${{ secrets.XREA_PASSWORD }}
-          protocol: ftps
-          local-dir: './dist/'
-          server-dir: ${{ vars.FTP_SERVER_DIR || '/public_html/madakotools/nazorigaki/' }}
+          local_path: './dist/*'
+          remote_path: ${{ vars.FTP_SERVER_DIR || '/public_html/madakotools/nazorigaki' }}
+          sftp_only: true

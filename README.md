@@ -22,17 +22,24 @@ python3 -m http.server 8000
 
 ## レンタルサーバーへの自動デプロイ
 
-`main` ブランチに push(PRのマージを含む)されると、`.github/workflows/deploy.yml` が自動的に FTPS でレンタルサーバー(XREA)へアップロードします(`index.html` / `style.css` / `app.js` のみ)。使うには、リポジトリの **Settings > Secrets and variables > Actions** で以下を設定してください。
+`main` ブランチに push(PRのマージを含む)されると、`.github/workflows/deploy.yml` が以下の順で自動的にレンタルサーバー(XREA)へアップロードします。
+
+1. XREAのAPI(`https://api.xrea.com/v1/tool/ssh_ip_allow`)へ、実行中のGitHub ActionsランナーのIPアドレスを送信し、SSH接続許可リストへ自動登録
+2. 反映を待つため5分間待機(XREAの管理画面の表示に合わせています)
+3. SFTPで `index.html` / `style.css` / `app.js` をアップロード
+
+使うには、リポジトリの **Settings > Secrets and variables > Actions** で以下を設定してください。
 
 ### Secrets(必須、値は非公開)
-- `XREA_HOST`: FTPのホスト名(SSH用と異なる場合があるので、XREAの「FTP接続情報」を確認してください)
-- `XREA_PORT`: FTPのポート番号(一般的には `21`。SSHのポートとは異なります)
-- `XREA_USER`: FTPのユーザー名
-- `XREA_PASSWORD`: FTPのパスワード
+- `XREA_HOST`: SFTPのホスト名
+- `XREA_PORT`: SFTPのポート番号
+- `XREA_USER`: SFTPのユーザー名
+- `XREA_PASSWORD`: SFTPのパスワード
+- `XREA_API_SECRET_KEY`: XREAの「SSH接続IP許可」API用のシークレットキー
+- `XREA_ACCOUNT`: XREAのアカウント名
+- `XREA_SERVER_NAME`: XREAのサーバー名
 
 ### Variables(任意)
-- `FTP_SERVER_DIR`: アップロード先ディレクトリ(未設定の場合は `/public_html/madakotools/nazorigaki/`)
+- `FTP_SERVER_DIR`: アップロード先ディレクトリ(未設定の場合は `/public_html/madakotools/nazorigaki`)
 
 設定後は Actions タブから手動実行(workflow_dispatch)もできます。
-
-**補足**: 当初SFTP(SSH経由)で試しましたが、レンタルサーバー側のSSH接続IP制限(GitHub Actionsは実行のたびに接続元IPが変わる)によりブロックされたため、通常のFTP/FTPSに切り替えています。FTP/FTPSはSSHとは別サービスのため、IP制限の対象外であることが多いです。
