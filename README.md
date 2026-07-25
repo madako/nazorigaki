@@ -22,15 +22,22 @@ python3 -m http.server 8000
 
 ## レンタルサーバーへの自動デプロイ
 
-`main` ブランチに push(PRのマージを含む)されると、`.github/workflows/deploy-ftp.yml` が自動的に SFTP でレンタルサーバーへアップロードします(`index.html` / `style.css` / `app.js` のみ)。使うには、リポジトリの **Settings > Secrets and variables > Actions** で以下を設定してください。
+`main` ブランチに push(PRのマージを含む)されると、`.github/workflows/deploy.yml` が以下の順で自動的にレンタルサーバー(XREA)へアップロードします。
+
+1. XREAのAPI(`https://api.xrea.com/v1/tool/ssh_ip_allow`)へ、実行中のGitHub ActionsランナーのIPアドレスを送信し、SSH接続許可リストへ自動登録
+2. 反映を待つため3分間待機
+3. SFTPで `index.html` / `style.css` / `app.js` をアップロード
+
+使うには、リポジトリの **Settings > Secrets and variables > Actions** で以下を設定してください。
 
 ### Secrets(必須、値は非公開)
-- `FTP_SERVER`: レンタルサーバーのホスト名(例: `sftp.example.com`)
-- `FTP_USERNAME`: SFTPのユーザー名
-- `FTP_PASSWORD`: SFTPのパスワード
+- `XREA_HOST`: SFTPのホスト名(XREAの「SSH接続IP許可」APIの `server_name` としても使われます)
+- `XREA_PORT`: SFTPのポート番号
+- `XREA_USER`: SFTPのユーザー名(同APIの `account` としても使われます)
+- `XREA_PASSWORD`: SFTPのパスワード
+- `XREA_API_SECRET_KEY`: XREAの「SSH接続IP許可」API用のシークレットキー
 
-### Variables(任意、初期値あり)
-- `FTP_PORT`: SFTPのポート番号(既定値は `22`)
-- `FTP_SERVER_DIR`: アップロード先ディレクトリ(既定値は `/`。例: `/public_html/nazorigaki/`)
+### Variables(任意)
+- `FTP_SERVER_DIR`: アップロード先ディレクトリ(未設定の場合は `/public_html/madakotools/nazorigaki`)
 
 設定後は Actions タブから手動実行(workflow_dispatch)もできます。

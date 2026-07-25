@@ -1,0 +1,56 @@
+name: Deploy to XREA via SFTP
+
+on:
+  push:
+    branches:
+      - main  # mainブランチにPushされた時に実行
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Register runner IP with XREA SSH allow list
+        run: |
+          RUNNER_IP=$(curl -s https://api.ipify.org)
+          echo "Runner IP: $RUNNER_IP"
+          RESPONSE=$(curl -sS -X POST https://api.xrea.com/v1/tool/ssh_ip_allow \
+            -d "api_secret_key=${{ secrets.XREA_API_SECRET_KEY }}" \
+            -d "account=${{ secrets.XREA_USER }}" \
+            -d "server_name=${{ secrets.XREA_HOST }}" \
+            -d "param[addr]=$RUNNER_IP")
+          echo "XREA API response: $RESPONSE"
+
+      - name: Wait for XREA to apply the IP allow list
+        run: sleep 180  # 3分待機
+
+      - name: Prepare deploy folder
+        run: |
+          mkdir -p dist
+          cp index.html style.css app.js dist/
+
+      - name: Normalize remote directory path
+        run: |
+          REMOTE_DIR="${{ vars.FTP_SERVER_DIR || '/public_html/madakotools/nazorigaki' }}"
+          # XREAのSFTPセッションはFTPのようにホームディレクトリへchrootされないため、
+          # 先頭の "/" を外した相対パスとして扱う(FTPの「ルートパス」起点で解決させる)
+          REMOTE_DIR="${REMOTE_DIR#/}"
+          case "$REMOTE_DIR" in
+            */) ;;
+            *) REMOTE_DIR="$REMOTE_DIR/" ;;
+          esac
+          echo "REMOTE_DIR=$REMOTE_DIR" >> "$GITHUB_ENV"
+
+      - name: SFTP Deploy
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          server: ${{ secrets.XREA_HOST }}
+          port: ${{ secrets.XREA_PORT }}
+          username: ${{ secrets.XREA_USER }}
+          password: ${{ secrets.XREA_PASSWORD }}
+          local_path: './dist/*'
+          remote_path: ${{ env.REMOTE_DIR }}
+          sftp_only: true
