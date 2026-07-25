@@ -21,7 +21,6 @@ jobs:
           MAX_ATTEMPTS=5
           for i in $(seq 1 "$MAX_ATTEMPTS"); do
             HTTP_STATUS=$(curl -sS -o /tmp/xrea_response.txt -w "%{http_code}" -X POST https://api.xrea.com/v1/tool/ssh_ip_allow \
-              -H "Content-Type: application/x-www-form-urlencoded" \
               -d "api_secret_key=${{ secrets.XREA_API_SECRET_KEY }}" \
               -d "account=${{ secrets.XREA_USER }}" \
               -d "server_name=${{ secrets.XREA_HOST }}" \
