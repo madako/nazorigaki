@@ -22,15 +22,17 @@ python3 -m http.server 8000
 
 ## レンタルサーバーへの自動デプロイ
 
-`main` ブランチに push(PRのマージを含む)されると、`.github/workflows/deploy-ftp.yml` が自動的に SFTP でレンタルサーバーへアップロードします(`index.html` / `style.css` / `app.js` のみ)。使うには、リポジトリの **Settings > Secrets and variables > Actions** で以下を設定してください。
+`main` ブランチに push(PRのマージを含む)されると、`.github/workflows/deploy.yml` が自動的に SFTP でレンタルサーバー(XREA)へアップロードします(`index.html` / `style.css` / `app.js` のみ)。使うには、リポジトリの **Settings > Secrets and variables > Actions** で以下を設定してください。
 
 ### Secrets(必須、値は非公開)
-- `FTP_SERVER`: レンタルサーバーのホスト名(例: `sftp.example.com`)
-- `FTP_USERNAME`: SFTPのユーザー名
-- `FTP_PASSWORD`: SFTPのパスワード
+- `XREA_HOST`: レンタルサーバーのホスト名
+- `XREA_PORT`: SFTPのポート番号
+- `XREA_USER`: SFTPのユーザー名
+- `XREA_PASSWORD`: SFTPのパスワード
 
-### Variables(任意、初期値あり)
-- `FTP_PORT`: SFTPのポート番号(既定値は `22`)
-- `FTP_SERVER_DIR`: アップロード先ディレクトリ(既定値は `/`。例: `/public_html/nazorigaki/`)
+### Variables(任意)
+- `FTP_SERVER_DIR`: アップロード先ディレクトリ(未設定の場合は `/public_html/madakotools/nazorigaki`)
 
 設定後は Actions タブから手動実行(workflow_dispatch)もできます。
+
+**注意**: レンタルサーバー側でSSH/SFTP接続を許可するIPアドレスを制限している場合、GitHub Actionsは実行のたびに接続元IPが変わるため、接続がブロックされることがあります。その場合は、IP制限を解除するか、固定IPを持つ自己ホスト型のRunnerを使う必要があります。

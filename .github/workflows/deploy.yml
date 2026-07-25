@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main  # mainブランチにPushされた時に実行
+  workflow_dispatch: {}
 
 jobs:
   deploy:
@@ -12,22 +13,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # -----------------------------------------------------------------
-      # 1. XREAの「SSH接続IP許可」をAPI/Webリクエストで事前更新するステップ
-      # -----------------------------------------------------------------
-      - name: Enable XREA SSH IP Permission
+      - name: Prepare deploy folder
         run: |
-          # ランナー自身のパブリックIPを取得
-          CURRENT_IP=$(curl -s https://api.ipify.org)
-          echo "Current Runner IP: $CURRENT_IP"
-          
-          # XREAのSSH IP許可更新APIまたはフォームを叩く処理
-          # ※ XREAマイページ/コントロールパネルのSSH登録URLに対してPOSTリクエストを送信します。
-          # APIトークンやログイン情報を用いてIPを許可登録してください。
+          mkdir -p dist
+          cp index.html style.css app.js dist/
 
-      # -----------------------------------------------------------------
-      # 2. SFTP転送を実行するステップ
-      # -----------------------------------------------------------------
       - name: SFTP Deploy
         uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
@@ -35,6 +25,6 @@ jobs:
           port: ${{ secrets.XREA_PORT }}
           username: ${{ secrets.XREA_USER }}
           password: ${{ secrets.XREA_PASSWORD }}
-          local_path: './*'                   # 転送元のローカルパス（ビルド成果物がある場合は `./dist/*` 等）
-          remote_path: '/public_html'          # 画面に表示されているドキュメントルート
+          local_path: './dist/*'
+          remote_path: ${{ vars.FTP_SERVER_DIR || '/public_html/madakotools/nazorigaki' }}
           sftp_only: true
