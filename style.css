@@ -29,6 +29,15 @@ body {
   color: #ff6b6b;
 }
 
+.app-header h1 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.app-header h1 a:hover {
+  text-decoration: underline;
+}
+
 .mode-switch {
   display: flex;
   gap: 8px;
