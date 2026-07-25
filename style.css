@@ -392,3 +392,10 @@ body {
     align-items: stretch;
   }
 }
+
+.app-footer {
+  text-align: center;
+  padding: 16px;
+  color: #b8a88a;
+  font-size: 0.8rem;
+}
