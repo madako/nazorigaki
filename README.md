@@ -31,13 +31,11 @@ python3 -m http.server 8000
 使うには、リポジトリの **Settings > Secrets and variables > Actions** で以下を設定してください。
 
 ### Secrets(必須、値は非公開)
-- `XREA_HOST`: SFTPのホスト名
+- `XREA_HOST`: SFTPのホスト名(XREAの「SSH接続IP許可」APIの `server_name` としても使われます)
 - `XREA_PORT`: SFTPのポート番号
-- `XREA_USER`: SFTPのユーザー名
+- `XREA_USER`: SFTPのユーザー名(同APIの `account` としても使われます)
 - `XREA_PASSWORD`: SFTPのパスワード
 - `XREA_API_SECRET_KEY`: XREAの「SSH接続IP許可」API用のシークレットキー
-- `XREA_ACCOUNT`: XREAのアカウント名
-- `XREA_SERVER_NAME`: XREAのサーバー名
 
 ### Variables(任意)
 - `FTP_SERVER_DIR`: アップロード先ディレクトリ(未設定の場合は `/public_html/madakotools/nazorigaki`)

@@ -19,8 +19,8 @@ jobs:
           echo "Runner IP: $RUNNER_IP"
           RESPONSE=$(curl -sS -X POST https://api.xrea.com/v1/tool/ssh_ip_allow \
             -d "api_secret_key=${{ secrets.XREA_API_SECRET_KEY }}" \
-            -d "account=${{ secrets.XREA_ACCOUNT }}" \
-            -d "server_name=${{ secrets.XREA_SERVER_NAME }}" \
+            -d "account=${{ secrets.XREA_USER }}" \
+            -d "server_name=${{ secrets.XREA_HOST }}" \
             -d "param[addr]=$RUNNER_IP")
           echo "XREA API response: $RESPONSE"
 
