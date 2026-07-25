@@ -22,17 +22,17 @@ python3 -m http.server 8000
 
 ## レンタルサーバーへの自動デプロイ
 
-`main` ブランチに push(PRのマージを含む)されると、`.github/workflows/deploy.yml` が自動的に SFTP でレンタルサーバー(XREA)へアップロードします(`index.html` / `style.css` / `app.js` のみ)。使うには、リポジトリの **Settings > Secrets and variables > Actions** で以下を設定してください。
+`main` ブランチに push(PRのマージを含む)されると、`.github/workflows/deploy.yml` が自動的に FTPS でレンタルサーバー(XREA)へアップロードします(`index.html` / `style.css` / `app.js` のみ)。使うには、リポジトリの **Settings > Secrets and variables > Actions** で以下を設定してください。
 
 ### Secrets(必須、値は非公開)
-- `XREA_HOST`: レンタルサーバーのホスト名
-- `XREA_PORT`: SFTPのポート番号
-- `XREA_USER`: SFTPのユーザー名
-- `XREA_PASSWORD`: SFTPのパスワード
+- `XREA_HOST`: FTPのホスト名(SSH用と異なる場合があるので、XREAの「FTP接続情報」を確認してください)
+- `XREA_PORT`: FTPのポート番号(一般的には `21`。SSHのポートとは異なります)
+- `XREA_USER`: FTPのユーザー名
+- `XREA_PASSWORD`: FTPのパスワード
 
 ### Variables(任意)
-- `FTP_SERVER_DIR`: アップロード先ディレクトリ(未設定の場合は `/public_html/madakotools/nazorigaki`)
+- `FTP_SERVER_DIR`: アップロード先ディレクトリ(未設定の場合は `/public_html/madakotools/nazorigaki/`)
 
 設定後は Actions タブから手動実行(workflow_dispatch)もできます。
 
-**注意**: レンタルサーバー側でSSH/SFTP接続を許可するIPアドレスを制限している場合、GitHub Actionsは実行のたびに接続元IPが変わるため、接続がブロックされることがあります。その場合は、IP制限を解除するか、固定IPを持つ自己ホスト型のRunnerを使う必要があります。
+**補足**: 当初SFTP(SSH経由)で試しましたが、レンタルサーバー側のSSH接続IP制限(GitHub Actionsは実行のたびに接続元IPが変わる)によりブロックされたため、通常のFTP/FTPSに切り替えています。FTP/FTPSはSSHとは別サービスのため、IP制限の対象外であることが多いです。

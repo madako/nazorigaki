@@ -1,4 +1,4 @@
-name: Deploy to XREA via SFTP
+name: Deploy to XREA via FTPS
 
 on:
   push:
@@ -18,13 +18,13 @@ jobs:
           mkdir -p dist
           cp index.html style.css app.js dist/
 
-      - name: SFTP Deploy
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+      - name: FTPS Deploy
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
           server: ${{ secrets.XREA_HOST }}
           port: ${{ secrets.XREA_PORT }}
           username: ${{ secrets.XREA_USER }}
           password: ${{ secrets.XREA_PASSWORD }}
-          local_path: './dist/*'
-          remote_path: ${{ vars.FTP_SERVER_DIR || '/public_html/madakotools/nazorigaki' }}
-          sftp_only: true
+          protocol: ftps
+          local-dir: './dist/'
+          server-dir: ${{ vars.FTP_SERVER_DIR || '/public_html/madakotools/nazorigaki/' }}
