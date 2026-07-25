@@ -32,6 +32,15 @@ jobs:
           mkdir -p dist
           cp index.html style.css app.js dist/
 
+      - name: Normalize remote directory path
+        run: |
+          REMOTE_DIR="${{ vars.FTP_SERVER_DIR || '/public_html/madakotools/nazorigaki' }}"
+          case "$REMOTE_DIR" in
+            */) ;;
+            *) REMOTE_DIR="$REMOTE_DIR/" ;;
+          esac
+          echo "REMOTE_DIR=$REMOTE_DIR" >> "$GITHUB_ENV"
+
       - name: SFTP Deploy
         uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
@@ -40,5 +49,5 @@ jobs:
           username: ${{ secrets.XREA_USER }}
           password: ${{ secrets.XREA_PASSWORD }}
           local_path: './dist/*'
-          remote_path: ${{ vars.FTP_SERVER_DIR || '/public_html/madakotools/nazorigaki' }}
+          remote_path: ${{ env.REMOTE_DIR }}
           sftp_only: true
