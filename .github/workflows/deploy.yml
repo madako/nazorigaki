@@ -17,12 +17,31 @@ jobs:
         run: |
           RUNNER_IP=$(curl -s https://api.ipify.org)
           echo "Runner IP: $RUNNER_IP"
-          RESPONSE=$(curl -sS -X POST https://api.xrea.com/v1/tool/ssh_ip_allow \
-            -d "api_secret_key=${{ secrets.XREA_API_SECRET_KEY }}" \
-            -d "account=${{ secrets.XREA_USER }}" \
-            -d "server_name=${{ secrets.XREA_HOST }}" \
-            -d "param[addr]=$RUNNER_IP")
-          echo "XREA API response: $RESPONSE"
+
+          MAX_ATTEMPTS=5
+          for i in $(seq 1 "$MAX_ATTEMPTS"); do
+            HTTP_STATUS=$(curl -sS -o /tmp/xrea_response.txt -w "%{http_code}" -X POST https://api.xrea.com/v1/tool/ssh_ip_allow \
+              -H "Content-Type: application/x-www-form-urlencoded" \
+              -d "api_secret_key=${{ secrets.XREA_API_SECRET_KEY }}" \
+              -d "account=${{ secrets.XREA_USER }}" \
+              -d "server_name=${{ secrets.XREA_HOST }}" \
+              -d "param[addr]=$RUNNER_IP")
+            echo "Attempt $i/$MAX_ATTEMPTS: HTTP status $HTTP_STATUS"
+            cat /tmp/xrea_response.txt
+
+            if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+              echo "IP registration succeeded."
+              exit 0
+            fi
+
+            if [ "$i" -lt "$MAX_ATTEMPTS" ]; then
+              echo "Retrying in 10s..."
+              sleep 10
+            fi
+          done
+
+          echo "::error::Failed to register runner IP with XREA after $MAX_ATTEMPTS attempts (last status: $HTTP_STATUS)"
+          exit 1
 
       - name: Wait for XREA to apply the IP allow list
         run: sleep 180  # 3分待機
