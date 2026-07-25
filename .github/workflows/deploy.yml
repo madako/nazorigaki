@@ -25,7 +25,7 @@ jobs:
           echo "XREA API response: $RESPONSE"
 
       - name: Wait for XREA to apply the IP allow list
-        run: sleep 300  # XREAの管理画面に「反映まで5分程度」と表示されるため
+        run: sleep 180  # 3分待機
 
       - name: Prepare deploy folder
         run: |
