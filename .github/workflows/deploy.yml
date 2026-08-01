@@ -62,13 +62,24 @@ jobs:
           esac
           echo "REMOTE_DIR=$REMOTE_DIR" >> "$GITHUB_ENV"
 
+      - name: Install sshpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
       - name: SFTP Deploy
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
-        with:
-          server: ${{ secrets.XREA_HOST }}
-          port: ${{ secrets.XREA_PORT }}
-          username: ${{ secrets.XREA_USER }}
-          password: ${{ secrets.XREA_PASSWORD }}
-          local_path: './dist/*'
-          remote_path: ${{ env.REMOTE_DIR }}
-          sftp_only: true
+        run: |
+          REMOTE_DIR="${{ env.REMOTE_DIR }}"
+          BATCH=$(printf 'put dist/index.html %sindex.html\nput dist/style.css %sstyle.css\nput dist/app.js %sapp.js\n' "$REMOTE_DIR" "$REMOTE_DIR" "$REMOTE_DIR")
+
+          MAX_ATTEMPTS=3
+          for i in $(seq 1 "$MAX_ATTEMPTS"); do
+            if printf '%s' "$BATCH" | sshpass -p "${{ secrets.XREA_PASSWORD }}" sftp -o StrictHostKeyChecking=no -P "${{ secrets.XREA_PORT }}" "${{ secrets.XREA_USER }}@${{ secrets.XREA_HOST }}"; then
+              echo "SFTP upload succeeded."
+              exit 0
+            fi
+            echo "SFTP attempt $i/$MAX_ATTEMPTS failed."
+            if [ "$i" -lt "$MAX_ATTEMPTS" ]; then
+              sleep 15
+            fi
+          done
+          echo "::error::SFTP upload failed after $MAX_ATTEMPTS attempts"
+          exit 1
